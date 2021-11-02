@@ -8,26 +8,25 @@
 #define SCENE_NB_COL_MAX        (8)
 #define SCENE_CELL_VOID_VALUE   ('V')
 #define SCENE_CELL_VOID_CHAR    ('-')
-#define CHAIN_SIZE_MAX          (SCENE_NB_ROW_MAX)
+
 #define INPUT_BUFFER_LEN        (64)
-#define SRC_ROW                 (0)
-#define SRC_COL                 (1)
-#define DST_ROW                 (2)
-#define DST_COL                 (3)
-#define VERTICAL                (5)
-#define HORIZONTAL              (6)
-#define DIAGONAL                (7)
+#define CHAIN_SIZE_MAX          (SCENE_NB_ROW_MAX)      //This might be useless...
+
+
+#define VERTICAL                (77)                    //This is definitely useless but clarifies what SetDirection() does.
+#define HORIZONTAL              (88)
+#define DIAGONAL                (99)
 
 /* −−−−−−−−−−−−−−−− PROTOTYPES DES FONCTIONS −−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−− */
 void SceneDisplay(char pa_sceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol);
 void BorderDisplay(int pa_nbCol);
 void ColumnDisplay(int pa_nbCol);
-void GetMove(int *pa_pISrcRow, int *pa_pISrcCol, int *pa_pIDstRow, int *pa_pIDstCol/*int pa_iCommandArray[]*/);
-int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol, /*int pa_iCommand[]*/ int pa_srcRow, int pa_srcCol, int pa_dstRow, int pa_dstCol);
-int SetMoveDirection(int pa_iDeltaX, int pa_iDeltaY);
-int SetIncrement(int *pa_pISrc, int *pa_pIDst);
+void GetMove(int *pa_pISrcRow, int *pa_pISrcCol, int *pa_pIDstRow, int *pa_pIDstCol);
 void ConvertDeltaToPositiveInt(int *pa_pIDelta);
-int ** FindLongestChain(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_row, int pa_col);
+int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol, int pa_srcRow, int pa_srcCol, int pa_dstRow, int pa_dstCol);
+int SetIncrement(int *pa_pISrc, int *pa_pIDst);
+int SetDirection(int pa_srcRow, int pa_srcCol, int pa_dstRow, int pa_dstCol);
+char *ScanAxis();
 
 /* −−−−−−−−−−−−−−−− CORPS DU PROGRAMME : FONCTION MAIN −−−−−−−−−−−−−−−−−−−−−−−−− */
 int main(int argc, char *argv[]) {
@@ -58,7 +57,7 @@ int main(int argc, char *argv[]) {
     do {
         printf("Enter movement 'srcRow srcCol dstRow dstCol'.\r\n");
         printf("srcRow and dstRow must be included between 0 and %d.\r\nsrcCol and dstCol must be included between 0 and %d.\r\n --> ", SCENE_NB_ROW_MAX - 1, SCENE_NB_COL_MAX - 1);
-        GetMove(&iSrcRow, &iSrcCol, &iDstRow, &iDstCol/*iCommand*/);
+        GetMove(&iSrcRow, &iSrcCol, &iDstRow, &iDstCol);
     } while(iSrcRow < 0 || iSrcRow > SCENE_NB_ROW_MAX - 1 ||
             iSrcCol < 0 || iSrcCol > SCENE_NB_COL_MAX - 1 ||
             iDstRow < 0 || iDstRow > SCENE_NB_ROW_MAX - 1 ||
@@ -80,8 +79,10 @@ int main(int argc, char *argv[]) {
 
 /* −−−−−−−−−−−−−−−− IMPLEMENTATIONS DES FONCTIONS −−−−−−−−−−−−−−−−−−−−−−−−−−−−−− */
 void SceneDisplay(char pa_sceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol) {
+    
     ColumnDisplay(pa_nbCol);
     BorderDisplay(pa_nbCol);
+
     for(int i = 0; i < pa_nbRow; i++) {
         printf("%d |", i);
         for(int j = 0; j < pa_nbCol; j++) {
@@ -95,13 +96,15 @@ void SceneDisplay(char pa_sceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_n
         printf("| %d", i);
         printf("\r\n");
     }
+
     BorderDisplay(pa_nbCol);
     ColumnDisplay(pa_nbCol);
 
 }
 void BorderDisplay(int pa_nbCol) {
+    
     printf("   ");
-    for(int i = 0; i < pa_nbCol; i++) {
+        for(int i = 0; i < pa_nbCol; i++) {
         printf("-");
         if(i < pa_nbCol - 1) {
                 printf("--");
@@ -110,13 +113,16 @@ void BorderDisplay(int pa_nbCol) {
     printf("\r\n");
 }
 void ColumnDisplay(int pa_nbCol) {
+    
     printf("   ");
     for(int i = 0; i < pa_nbCol; i++) {
         printf("%d  ", i);
     }
     printf("\r\n");
 }
-void GetMove(int *pa_pISrcRow, int *pa_pISrcCol, int *pa_pIDstRow, int *pa_pIDstCol/*int pa_iCommand[]*/) {
+void GetMove(int *pa_pISrcRow, int *pa_pISrcCol, int *pa_pIDstRow, int *pa_pIDstCol) {
+
+    
     char *pToken;
     char buffer[INPUT_BUFFER_LEN];
     const char separators[] = "\r\n ";
@@ -126,6 +132,7 @@ void GetMove(int *pa_pISrcRow, int *pa_pISrcCol, int *pa_pIDstRow, int *pa_pIDst
     
     printf("Enter movement src -> dst : ");
     fgets(buffer, INPUT_BUFFER_LEN, stdin);
+    
     pToken = strtok(buffer, separators);
     if(pToken) {
         *pa_pISrcRow = atoi(pToken);
@@ -143,10 +150,16 @@ void GetMove(int *pa_pISrcRow, int *pa_pISrcCol, int *pa_pIDstRow, int *pa_pIDst
         }
     }
 }
+void ConvertDeltaToPositiveInt(int *pa_pIDelta) {
+    
+    if(*pa_pIDelta < 0) {
+        *pa_pIDelta = -*pa_pIDelta;
+    }
+}
 int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol, int pa_srcRow, int pa_srcCol, int pa_dstRow, int pa_dstCol) {
-    int iDeltaX, iDeltaY;
-    int iMoveDirection;
+    
     int iXIncrement, iYIncrement;
+    int iRowToCheck, iColToCheck;
     
     // Vérification : Cellule de départ vide OU cellule d'arrivée non vide
     if( pa_SceneArray[pa_srcRow][pa_srcCol] == SCENE_CELL_VOID_VALUE || 
@@ -155,21 +168,21 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
         return 0;
     }
     
-    //Vérification : Axe de déplacement autorisé et vacuité des cellules
-    iDeltaX = pa_dstCol - pa_srcCol;
-    iDeltaY = pa_dstRow - pa_srcRow;
-    ConvertDeltaToPositiveInt(&iDeltaX);
-    ConvertDeltaToPositiveInt(&iDeltaY);
+    //Vérification : Axe de déplacement autorisé
+    if(!(SetDirection(pa_srcRow, pa_srcCol, pa_dstRow, pa_dstCol))) {
+        return 0;
+    }
     
+    //Vérification : Vacuité des cellules intermédiaires
     iXIncrement = SetIncrement(&pa_srcCol, &pa_dstCol);
     iYIncrement = SetIncrement(&pa_srcRow, &pa_dstRow);
+    iRowToCheck = pa_srcRow;
+    iColToCheck = pa_srcCol;
 
-    int i = pa_srcRow;
-    int j = pa_srcCol;  
-    while((i != pa_dstRow) || (j != pa_dstCol)) {
-        i += iYIncrement;
-        j += iXIncrement;
-        if(pa_SceneArray[i][j] != SCENE_CELL_VOID_VALUE) {
+    while((iRowToCheck != pa_dstRow) || (iColToCheck != pa_dstCol)) {
+        iRowToCheck += iYIncrement;
+        iColToCheck += iXIncrement;
+        if(pa_SceneArray[iRowToCheck][iColToCheck] != SCENE_CELL_VOID_VALUE) {
             printf("There is a non void cell in the path...\r\n");
         return 0;
         }
@@ -193,6 +206,8 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
         {-1, +0}
     };
 
+
+    /*
     for(int i = 0; i < 4; i++) {
         iChainLength = 1;
         iDecalageX = iCombinaisonsIncrements[i][0];
@@ -222,8 +237,10 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
             printf("[ %d ; %d ]\r\n", iBufferChain[i][0], iBufferChain[i][1]);
         }
     }
+    */
 }
 int SetIncrement(int *pa_pISrc, int *pa_pIDst) {
+    
     if(*pa_pISrc < *pa_pIDst) {
         return 1;
     }
@@ -234,8 +251,28 @@ int SetIncrement(int *pa_pISrc, int *pa_pIDst) {
         return 0;
     }
 }
-void ConvertDeltaToPositiveInt(int *pa_pIDelta) {
-    if(*pa_pIDelta < 0) {
-        *pa_pIDelta = -*pa_pIDelta;
+int SetDirection(int pa_srcRow, int pa_srcCol, int pa_dstRow, int pa_dstCol) {
+    
+    int iDeltaX, iDeltaY;
+
+    iDeltaX = pa_dstCol - pa_srcCol;
+    iDeltaY = pa_dstRow - pa_srcRow;
+    ConvertDeltaToPositiveInt(&iDeltaX);
+    ConvertDeltaToPositiveInt(&iDeltaY);
+
+    if(iDeltaX && !(iDeltaY)) {
+        return VERTICAL;
     }
+    else if (iDeltaY && !(iDeltaX)) {
+        return HORIZONTAL;
+    }
+    else if(iDeltaX && iDeltaY && (iDeltaX == iDeltaY)) {
+        return DIAGONAL;
+    }
+    else {
+        return 0;
+    }
+}
+char *ScanAxis() {
+
 }
