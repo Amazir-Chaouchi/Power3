@@ -193,12 +193,10 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
     pa_SceneArray[pa_srcRow][pa_srcCol] = SCENE_CELL_VOID_VALUE;
     
     //Recherche de la plus longue chaine...
-    char cCellToTest;
-    int iLongestChain[8][2] = {0};
-    int iBufferChain[8][2] = {0};
+    char cLongestChain[14] = "              ";
+    char cBufferChain[14] = "              ";
     int iChainLength = 1;
-    int iDecalageX, iDecalageY;
-    int row, col;
+    int iChainCounter = 0;
     int iCombinaisonsIncrements[4][2] = {
         {-1, -1},
         {+1, -1},
@@ -206,16 +204,30 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
         {-1, +0}
     };
 
+    for(int i = 0; i < 4; i++) {
+        
+        //Définit l’axe de recherche...
+        iYIncrement = iCombinaisonsIncrements[i][0];
+        iXIncrement = iCombinaisonsIncrements[i][1];
 
+        while( pa_dstRow + iYIncrement >= 0 && pa_dstRow + iYIncrement < SCENE_NB_ROW_MAX &&                                    //Tant que la case est dans la scène...
+            pa_dstCol + iXIncrement >= 0 && pa_dstCol + iYIncrement < SCENE_NB_COL_MAX &&
+            pa_SceneArray[pa_dstRow + iYIncrement][pa_dstCol + iXIncrement] == pa_SceneArray[pa_dstRow][pa_dstCol]) {           //...et tant qu’elle est de la même "couleur"...
+
+            //Ajouter les coordonnées de la case à la chaine buffer.
+            cBufferChain[iChainCounter] = pa_dstRow + iYIncrement;
+            cBufferChain[iChainCounter + 1] = pa_dstCol + iXIncrement;
+            iChainCounter += 2;
+
+            //Incrémenter X et Y pour rechercher plus loin dans l’axe.
+            iYIncrement += iCombinaisonsIncrements[i][0];
+            iXIncrement += iCombinaisonsIncrements[i][1];
+        }
+        printf("buffer chain : %s\r\n", cBufferChain);
+    }
     /*
     for(int i = 0; i < 4; i++) {
-        iChainLength = 1;
-        iDecalageX = iCombinaisonsIncrements[i][0];
-        iDecalageY = iCombinaisonsIncrements[i][1];
         for(int j = 0; j < 2; j++) {
-            row = pa_dstRow + iDecalageY;
-            col = pa_dstCol + iDecalageX;
-            cCellToTest = pa_SceneArray[row][col];
             
             if(row >= 0 && row <= SCENE_NB_ROW_MAX - 1 && col >= 0 && col <= SCENE_NB_COL_MAX - 1) {
                 //Créer chaine dans une direction...
