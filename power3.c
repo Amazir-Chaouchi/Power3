@@ -193,8 +193,8 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
     pa_SceneArray[pa_srcRow][pa_srcCol] = SCENE_CELL_VOID_VALUE;
     
     //Recherche de la plus longue chaine...
-    char cLongestChain[14] = "              ";
-    char cBufferChain[14] = "              ";
+    int iLongestChain[14];
+    int iBufferChain[14];
     int iChainLength = 1;
     int iChainCounter = 0;
     int iCombinaisonsIncrements[4][2] = {
@@ -206,6 +206,12 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
 
     for(int i = 0; i < 4; i++) {
         
+        //(Ré)initialisation des variables...
+        for (int i = 0; i < iChainCounter; i++) {
+            iBufferChain[i] = 0;
+        }
+        iChainCounter = 0;
+        
         //Définit l’axe de recherche...
         iYIncrement = iCombinaisonsIncrements[i][0];
         iXIncrement = iCombinaisonsIncrements[i][1];
@@ -215,15 +221,19 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
             pa_SceneArray[pa_dstRow + iYIncrement][pa_dstCol + iXIncrement] == pa_SceneArray[pa_dstRow][pa_dstCol]) {           //...et tant qu’elle est de la même "couleur"...
 
             //Ajouter les coordonnées de la case à la chaine buffer.
-            cBufferChain[iChainCounter] = pa_dstRow + iYIncrement;
-            cBufferChain[iChainCounter + 1] = pa_dstCol + iXIncrement;
+            iBufferChain[iChainCounter] = pa_dstRow + iYIncrement;
+            iBufferChain[iChainCounter + 1] = pa_dstCol + iXIncrement;
             iChainCounter += 2;
 
             //Incrémenter X et Y pour rechercher plus loin dans l’axe.
             iYIncrement += iCombinaisonsIncrements[i][0];
             iXIncrement += iCombinaisonsIncrements[i][1];
         }
-        printf("buffer chain : %s\r\n", cBufferChain);
+        printf("Buffer (%d): ", i + 1);
+        for(int i = 0; i < iChainCounter; i++) {
+            printf("%3d", iBufferChain[i]);
+        }
+        printf("\r\n");
     }
     /*
     for(int i = 0; i < 4; i++) {
