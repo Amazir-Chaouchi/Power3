@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     int nbCellsDestroyed = -1;
     
     nbCellsDestroyed = SceneTokenMove(chScene, SCENE_NB_ROW_MAX, SCENE_NB_COL_MAX, iSrcRow, iSrcCol, iDstRow, iDstCol);
-    printf("Return value : %d\r\n", nbCellsDestroyed);
+    SceneDisplay(chScene, SCENE_NB_ROW_MAX, SCENE_NB_COL_MAX);
     /* ++++ Fin Phase 3. +++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
     
     return EXIT_SUCCESS;
@@ -204,7 +204,7 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
     };
 
     for(int i = 0; i < 4; i++) {
-        
+        printf("----- LOOP N°%d\r\n", i);
         //(Ré)initialisation des variables...
         for (int i = 0; i < iBufferCounter; i++) {
             iBufferChain[i] = 0;
@@ -212,40 +212,58 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
         iBufferCounter = 0;
         
         //Définition de l’axe de recherche...
-        iYIncrement = iCombinaisonsIncrements[i][0];
-        iXIncrement = iCombinaisonsIncrements[i][1];
+        iXIncrement = iCombinaisonsIncrements[i][0];
+        iYIncrement = iCombinaisonsIncrements[i][1];
+        printf("INCREMENTS\r\nX-Inc = %d\r\nY-Inc = %d\r\n", iXIncrement, iYIncrement);
         
-        for(int j = 0; j < 2; j++) {                                                                                                //Scan dans les 2 sens.
-            while( pa_dstRow + iYIncrement >= 0 && pa_dstRow + iYIncrement < SCENE_NB_ROW_MAX &&                                    //Tant que la case est dans la scène...
-                pa_dstCol + iXIncrement >= 0 && pa_dstCol + iYIncrement < SCENE_NB_COL_MAX &&
-                pa_SceneArray[pa_dstRow + iYIncrement][pa_dstCol + iXIncrement] == pa_SceneArray[pa_dstRow][pa_dstCol]) {           //...et tant qu’elle est de la même "couleur"...
-
+        for(int j = 0; j < 2; j++) {                                                                                                    //Scan dans les 2 sens.
+            while(  pa_dstRow + iYIncrement >= 0 && pa_dstRow + iYIncrement < SCENE_NB_ROW_MAX &&                                       //Tant que la case est dans la scène...
+                    pa_dstCol + iXIncrement >= 0 && pa_dstCol + iXIncrement < SCENE_NB_COL_MAX &&
+                    pa_SceneArray[pa_dstRow + iYIncrement][pa_dstCol + iXIncrement] == pa_SceneArray[pa_dstRow][pa_dstCol]) {           //...et tant qu’elle est de la même "couleur"...
+                
+                printf("Entering while loop :\r\n");
+                printf("Scanned cell : [%d ; %d] = %c\r\n", pa_dstRow + iYIncrement, pa_dstCol + iXIncrement, pa_SceneArray[pa_dstRow + iYIncrement][pa_dstCol + iXIncrement]);
+                printf("Reference cell : [%d ; %d] = %c\r\n", pa_dstRow, pa_dstCol, pa_SceneArray[pa_dstRow][pa_dstCol]);
+                
                 //Ajouter les coordonnées de la case à la chaine buffer.
                 iBufferChain[iBufferCounter] = pa_dstRow + iYIncrement;
                 iBufferChain[iBufferCounter + 1] = pa_dstCol + iXIncrement;
                 iBufferCounter += 2;
 
                 //Incrémenter X et Y pour rechercher plus loin dans l’axe.
-                iYIncrement += iCombinaisonsIncrements[i][0];
-                iXIncrement += iCombinaisonsIncrements[i][1];
+                printf("Incrementing X-Inc and Y-Inc...\r\n");
+                iXIncrement += iCombinaisonsIncrements[i][0];
+                iYIncrement += iCombinaisonsIncrements[i][1];
+                printf("INCREMENTS\r\nX-Inc = %d\r\nY-Inc = %d\r\n", iXIncrement, iYIncrement);
+                
+                printf("Controls :\r\n");
+                printf("pa_dstRow = %d\t iYIncrement = %d\r\n", pa_dstRow, iYIncrement);
+                printf("pa_dstCol = %d\t iXIncrement = %d\r\n", pa_dstRow, iXIncrement);
             }
+            
             printf("Buffer (%d): ", i + 1);
-            for(int i = 0; i < iBufferCounter; i++) {
-                printf("%3d", iBufferChain[i]);
+            for(int m = 0; m < iBufferCounter; m++) {
+                printf("%2d", iBufferChain[m]);
             }
             printf("\r\n");
-
-            iYIncrement = -iCombinaisonsIncrements[i][0];
-            iXIncrement = -iCombinaisonsIncrements[i][1];
+            
+            printf("INCREMENTS BEFORE\r\nX-Inc = %d\r\nY-Inc = %d\r\n", iXIncrement, iYIncrement);
+            iCombinaisonsIncrements[i][0] = -iCombinaisonsIncrements[i][0];
+            iCombinaisonsIncrements[i][1] = -iCombinaisonsIncrements[i][1];
+            iXIncrement = iCombinaisonsIncrements[i][0];
+            iYIncrement = iCombinaisonsIncrements[i][1];
+            printf("INCREMENTS AFTER\r\nX-Inc = %d\r\nY-Inc = %d\r\n", iXIncrement, iYIncrement);
         }
 
         //Si c’est la chaine la plus longue à ce jour, la conserver.
-        if(iBufferCounter > iLongestCounter) {
+        if(iBufferCounter >= iLongestCounter) {
+            printf("Buffer chain est + la plus longue.\r\n");
             for(int i = 0; i < iBufferCounter; i++) {
                 iLongestChain[i] = iBufferChain[i];
                 iLongestCounter = iBufferCounter;
             }
         }
+        else {}
 
         printf("Chaine la plus longue : ");
         for(int i = 0; i < iLongestCounter; i++) {
@@ -253,6 +271,12 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
         }
         printf("\r\n");
     }
+    
+    //Destruction des cellules appartenant à la plus longue chaine...
+    for(int i = 0; i < iLongestCounter; i += 2) {
+        pa_SceneArray[iLongestChain[i]][iLongestChain[i + 1]] = SCENE_CELL_VOID_VALUE;
+    }
+    pa_SceneArray[pa_dstRow][pa_dstCol] = SCENE_CELL_VOID_VALUE;
 }
 int SetIncrement(int *pa_pISrc, int *pa_pIDst) {
     
