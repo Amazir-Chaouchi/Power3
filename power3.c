@@ -26,7 +26,6 @@ void ConvertDeltaToPositiveInt(int *pa_pIDelta);
 int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol, int pa_srcRow, int pa_srcCol, int pa_dstRow, int pa_dstCol);
 int SetIncrement(int *pa_pISrc, int *pa_pIDst);
 int SetDirection(int pa_srcRow, int pa_srcCol, int pa_dstRow, int pa_dstCol);
-char *ScanAxis();
 
 /* −−−−−−−−−−−−−−−− CORPS DU PROGRAMME : FONCTION MAIN −−−−−−−−−−−−−−−−−−−−−−−−− */
 int main(int argc, char *argv[]) {
@@ -207,7 +206,7 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
     for(int i = 0; i < 4; i++) {
         
         //(Ré)initialisation des variables...
-        for (int i = 0; i < iChainCounter; i++) {
+        for (int i = 0; i < iBufferCounter; i++) {
             iBufferChain[i] = 0;
         }
         iBufferCounter = 0;
@@ -222,8 +221,8 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
                 pa_SceneArray[pa_dstRow + iYIncrement][pa_dstCol + iXIncrement] == pa_SceneArray[pa_dstRow][pa_dstCol]) {           //...et tant qu’elle est de la même "couleur"...
 
                 //Ajouter les coordonnées de la case à la chaine buffer.
-                iBufferChain[iChainCounter] = pa_dstRow + iYIncrement;
-                iBufferChain[iChainCounter + 1] = pa_dstCol + iXIncrement;
+                iBufferChain[iBufferCounter] = pa_dstRow + iYIncrement;
+                iBufferChain[iBufferCounter + 1] = pa_dstCol + iXIncrement;
                 iBufferCounter += 2;
 
                 //Incrémenter X et Y pour rechercher plus loin dans l’axe.
@@ -236,8 +235,8 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
             }
             printf("\r\n");
 
-            iYIncrement = -iYIncrement;
-            iXIncrement = -iXIncrement;
+            iYIncrement = -iCombinaisonsIncrements[i][0];
+            iXIncrement = -iCombinaisonsIncrements[i][1];
         }
 
         //Si c’est la chaine la plus longue à ce jour, la conserver.
@@ -288,7 +287,4 @@ int SetDirection(int pa_srcRow, int pa_srcCol, int pa_dstRow, int pa_dstCol) {
     else {
         return 0;
     }
-}
-char *ScanAxis(char pa_SceneArray[][SCENE_NB_COL_MAX], int *pa_pIChain, int pa_iXIncrement, int pa_iYIncrement,) {
-
 }
