@@ -195,8 +195,8 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
     //Recherche de la plus longue chaine...
     int iLongestChain[14];
     int iBufferChain[14];
-    int iChainLength = 1;
-    int iChainCounter = 0;
+    int iBufferCounter = 0;
+    int iLongestCounter = 0;
     int iCombinaisonsIncrements[4][2] = {
         {-1, -1},
         {+1, -1},
@@ -210,56 +210,50 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
         for (int i = 0; i < iChainCounter; i++) {
             iBufferChain[i] = 0;
         }
-        iChainCounter = 0;
+        iBufferCounter = 0;
         
-        //Définit l’axe de recherche...
+        //Définition de l’axe de recherche...
         iYIncrement = iCombinaisonsIncrements[i][0];
         iXIncrement = iCombinaisonsIncrements[i][1];
+        
+        for(int j = 0; j < 2; j++) {                                                                                                //Scan dans les 2 sens.
+            while( pa_dstRow + iYIncrement >= 0 && pa_dstRow + iYIncrement < SCENE_NB_ROW_MAX &&                                    //Tant que la case est dans la scène...
+                pa_dstCol + iXIncrement >= 0 && pa_dstCol + iYIncrement < SCENE_NB_COL_MAX &&
+                pa_SceneArray[pa_dstRow + iYIncrement][pa_dstCol + iXIncrement] == pa_SceneArray[pa_dstRow][pa_dstCol]) {           //...et tant qu’elle est de la même "couleur"...
 
-        while( pa_dstRow + iYIncrement >= 0 && pa_dstRow + iYIncrement < SCENE_NB_ROW_MAX &&                                    //Tant que la case est dans la scène...
-            pa_dstCol + iXIncrement >= 0 && pa_dstCol + iYIncrement < SCENE_NB_COL_MAX &&
-            pa_SceneArray[pa_dstRow + iYIncrement][pa_dstCol + iXIncrement] == pa_SceneArray[pa_dstRow][pa_dstCol]) {           //...et tant qu’elle est de la même "couleur"...
+                //Ajouter les coordonnées de la case à la chaine buffer.
+                iBufferChain[iChainCounter] = pa_dstRow + iYIncrement;
+                iBufferChain[iChainCounter + 1] = pa_dstCol + iXIncrement;
+                iBufferCounter += 2;
 
-            //Ajouter les coordonnées de la case à la chaine buffer.
-            iBufferChain[iChainCounter] = pa_dstRow + iYIncrement;
-            iBufferChain[iChainCounter + 1] = pa_dstCol + iXIncrement;
-            iChainCounter += 2;
+                //Incrémenter X et Y pour rechercher plus loin dans l’axe.
+                iYIncrement += iCombinaisonsIncrements[i][0];
+                iXIncrement += iCombinaisonsIncrements[i][1];
+            }
+            printf("Buffer (%d): ", i + 1);
+            for(int i = 0; i < iBufferCounter; i++) {
+                printf("%3d", iBufferChain[i]);
+            }
+            printf("\r\n");
 
-            //Incrémenter X et Y pour rechercher plus loin dans l’axe.
-            iYIncrement += iCombinaisonsIncrements[i][0];
-            iXIncrement += iCombinaisonsIncrements[i][1];
+            iYIncrement = -iYIncrement;
+            iXIncrement = -iXIncrement;
         }
-        printf("Buffer (%d): ", i + 1);
-        for(int i = 0; i < iChainCounter; i++) {
-            printf("%3d", iBufferChain[i]);
+
+        //Si c’est la chaine la plus longue à ce jour, la conserver.
+        if(iBufferCounter > iLongestCounter) {
+            for(int i = 0; i < iBufferCounter; i++) {
+                iLongestChain[i] = iBufferChain[i];
+                iLongestCounter = iBufferCounter;
+            }
+        }
+
+        printf("Chaine la plus longue : ");
+        for(int i = 0; i < iLongestCounter; i++) {
+            printf("%3d", iLongestChain[i]);
         }
         printf("\r\n");
     }
-    /*
-    for(int i = 0; i < 4; i++) {
-        for(int j = 0; j < 2; j++) {
-            
-            if(row >= 0 && row <= SCENE_NB_ROW_MAX - 1 && col >= 0 && col <= SCENE_NB_COL_MAX - 1) {
-                //Créer chaine dans une direction...
-                while(cCellToTest == pa_SceneArray[pa_dstRow][pa_dstCol]) {
-                    iBufferChain[iChainLength - 1][0] = row;
-                    iBufferChain[iChainLength - 1][1] = col;
-                    printf("[ %d ; %d]\r\n", iBufferChain[iChainLength - 1][0], iBufferChain[iChainLength - 1][1]);
-                    row += iDecalageY;
-                    col += iDecalageX;
-                    iChainLength++;
-                    cCellToTest = pa_SceneArray[row][col];
-                }
-            }
-            iDecalageX = -iDecalageX;
-            iDecalageY = -iDecalageY;
-        }
-        printf("Buffer\r\n");
-        for(int i = 0; i < 8; i++) {
-            printf("[ %d ; %d ]\r\n", iBufferChain[i][0], iBufferChain[i][1]);
-        }
-    }
-    */
 }
 int SetIncrement(int *pa_pISrc, int *pa_pIDst) {
     
@@ -295,6 +289,6 @@ int SetDirection(int pa_srcRow, int pa_srcCol, int pa_dstRow, int pa_dstCol) {
         return 0;
     }
 }
-char *ScanAxis() {
+char *ScanAxis(char pa_SceneArray[][SCENE_NB_COL_MAX], int *pa_pIChain, int pa_iXIncrement, int pa_iYIncrement,) {
 
 }
