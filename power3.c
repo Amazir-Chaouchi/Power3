@@ -16,6 +16,7 @@
 #define DIAGONAL                (99)
 
 /* −−−−−−−−−−−−−−−− PROTOTYPES DES FONCTIONS −−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−− */
+void SceneInit(char pa_sceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol, char pa_fileNameStr[]);
 void SceneDisplay(char pa_sceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol);
 void BorderDisplay(int pa_nbCol);
 void ColumnDisplay(int pa_nbCol);
@@ -28,8 +29,7 @@ int SetDirection(int pa_srcRow, int pa_srcCol, int pa_dstRow, int pa_dstCol);
 /* −−−−−−−−−−−−−−−− CORPS DU PROGRAMME : FONCTION MAIN −−−−−−−−−−−−−−−−−−−−−−−−− */
 int main(int argc, char *argv[]) {
      
-    //const int iSceneNbRow, iSceneNbCol;
-    char chScene[SCENE_NB_ROW_MAX][SCENE_NB_COL_MAX] = {
+    char chScene[SCENE_NB_ROW_MAX][SCENE_NB_COL_MAX];/* = {
         {'A', 'A', 'V', 'V', 'E', 'B', 'C', 'V'},
         {'V', 'V', 'C', 'D', 'D', 'E', 'D', 'E'},
         {'A', 'E', 'A', 'V', 'E', 'B', 'V', 'A'},
@@ -38,15 +38,23 @@ int main(int argc, char *argv[]) {
         {'V', 'D', 'E', 'E', 'D', 'A', 'E', 'A'},
         {'V', 'V', 'B', 'V', 'B', 'V', 'B', 'V'},
         {'V', 'V', 'D', 'D', 'V', 'D', 'B', 'V'}    
-    };
+    };*/
+    char *cFileName;
     int iSrcRow, iSrcCol, iDstRow, iDstCol;
     int iNbCellsDestroyed;
+    int iSceneNbRow, iSceneNbCol;
+   
+    //Initialisation de la grille
+    iSceneNbRow = 4;
+    iSceneNbCol = 10;
+    cFileName = "grid2.txt";
+    SceneInit(chScene, iSceneNbRow, iSceneNbCol, cFileName);
     
     //Boucle de jeu
-   for(int i = 10; i > 0; i--) {
+    for(int i = 10; i > 0; i--) {
 
         //Scene initiale / Affichage formate de la scene de jeu
-        SceneDisplay(chScene, SCENE_NB_ROW_MAX, SCENE_NB_COL_MAX);
+        SceneDisplay(chScene, iSceneNbRow, iSceneNbCol);
 
         printf("Il vous reste %d tour(s) pour terminer le jeu.\r\n\r\n", i);
 
@@ -69,6 +77,36 @@ int main(int argc, char *argv[]) {
 }
 
 /* −−−−−−−−−−−−−−−− IMPLEMENTATIONS DES FONCTIONS −−−−−−−−−−−−−−−−−−−−−−−−−−−−−− */
+void SceneInit(char pa_sceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol, char pa_fileNameStr[]) {
+    FILE *ptr_fSceneGrid;
+    char c;
+    int iCurrentRow, iCurrentCol;
+    int iNbPassedChar;
+    
+    iCurrentRow = iCurrentCol = 0;
+    iNbPassedChar = 0;
+    
+    ptr_fSceneGrid = fopen(pa_fileNameStr, "r");
+    if(ptr_fSceneGrid == NULL) {
+        perror("Erreur à l'ouverture du fichier\r\n");
+    }
+    else {
+        do {            
+            do {
+                c = fgetc(ptr_fSceneGrid);
+                if((c >= 'A' && c <= 'E') || c == 'V') {
+                    pa_sceneArray[iCurrentRow][iCurrentCol] = c;
+                    iNbPassedChar++;
+                    iCurrentCol++;
+                }
+            } while(iCurrentCol < pa_nbCol);
+            
+            iCurrentCol = 0;
+            iCurrentRow++;
+        } while(iNbPassedChar < (pa_nbRow * pa_nbCol));
+        fclose(ptr_fSceneGrid);
+    }
+}
 void SceneDisplay(char pa_sceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol) {
     
     ColumnDisplay(pa_nbCol);
