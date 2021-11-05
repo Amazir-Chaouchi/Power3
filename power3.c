@@ -16,47 +16,52 @@
 #define DIAGONAL                (99)
 
 /* −−−−−−−−−−−−−−−− PROTOTYPES DES FONCTIONS −−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−− */
-void SceneInit(char pa_sceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol, char pa_fileNameStr[]);
 void SceneDisplay(char pa_sceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol);
 void BorderDisplay(int pa_nbCol);
 void ColumnDisplay(int pa_nbCol);
 void GetMove(int *pa_pISrcRow, int *pa_pISrcCol, int *pa_pIDstRow, int *pa_pIDstCol);
 void ConvertDeltaToPositiveInt(int *pa_pIDelta);
 int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol, int pa_srcRow, int pa_srcCol, int pa_dstRow, int pa_dstCol);
+int SceneInit(char pa_sceneArray[][SCENE_NB_COL_MAX], int *pa_pINbRow, int *pa_pINbCol, char pa_fileNameStr[]);
 int SetIncrement(int *pa_pISrc, int *pa_pIDst);
 int SetDirection(int pa_srcRow, int pa_srcCol, int pa_dstRow, int pa_dstCol);
 
 /* −−−−−−−−−−−−−−−− CORPS DU PROGRAMME : FONCTION MAIN −−−−−−−−−−−−−−−−−−−−−−−−− */
 int main(int argc, char *argv[]) {
      
-    char chScene[SCENE_NB_ROW_MAX][SCENE_NB_COL_MAX];/* = {
-        {'A', 'A', 'V', 'V', 'E', 'B', 'C', 'V'},
-        {'V', 'V', 'C', 'D', 'D', 'E', 'D', 'E'},
-        {'A', 'E', 'A', 'V', 'E', 'B', 'V', 'A'},
-        {'A', 'V', 'C', 'A', 'C', 'V', 'B', 'B'},
-        {'V', 'C', 'A', 'C', 'E', 'C', 'B', 'A'},
-        {'V', 'D', 'E', 'E', 'D', 'A', 'E', 'A'},
-        {'V', 'V', 'B', 'V', 'B', 'V', 'B', 'V'},
-        {'V', 'V', 'D', 'D', 'V', 'D', 'B', 'V'}    
-    };*/
+    char chScene[SCENE_NB_ROW_MAX][SCENE_NB_COL_MAX];
     char *cFileName;
     int iSrcRow, iSrcCol, iDstRow, iDstCol;
     int iNbCellsDestroyed;
     int iSceneNbRow, iSceneNbCol;
-   
+    int iNbTours, iNbVoidCells;
+    
+    //Passage de la grille (fichier externe) en paramètre de main
+    if(argc > 1) {
+        cFileName = argv[1];
+    }
+    else {
+        cFileName = "grid1.txt";
+    }
+    
     //Initialisation de la grille
-    iSceneNbRow = 4;
-    iSceneNbCol = 10;
-    cFileName = "grid2.txt";
-    SceneInit(chScene, iSceneNbRow, iSceneNbCol, cFileName);
+    iSceneNbRow = iSceneNbCol = 0;
+    iNbVoidCells = SceneInit(chScene, &iSceneNbRow, &iSceneNbCol, cFileName);
     
     //Boucle de jeu
-    for(int i = 10; i > 0; i--) {
+    iNbCellsDestroyed = 0;
+    iNbTours = 0;
+    while(iNbCellsDestroyed <= (iSceneNbRow * iSceneNbCol - iNbVoidCells)) {
 
         //Scene initiale / Affichage formate de la scene de jeu
         SceneDisplay(chScene, iSceneNbRow, iSceneNbCol);
-
-        printf("Il vous reste %d tour(s) pour terminer le jeu.\r\n\r\n", i);
+        
+        //Si condition de victoire validée au round précédent. Affichage de la scène vide + message de victoire.
+        if(iNbCellsDestroyed == (iSceneNbRow * iSceneNbCol - iNbVoidCells)) {
+            printf("FÉLICITATIONS !!! VOUS AVEZ GAGNÉ !\r\n");
+            printf("Grille résolue en %d tours.\r\n", iNbTours);
+            return EXIT_SUCCESS;
+        }
 
         //Traitement des entrees clavier
         do {
@@ -69,20 +74,45 @@ int main(int argc, char *argv[]) {
                 iDstCol < 0 || iDstCol > SCENE_NB_COL_MAX - 1);
 
         //Algorithme de mouvement des jetons (-> Moteur du jeu)    
-        iNbCellsDestroyed = SceneTokenMove(chScene, SCENE_NB_ROW_MAX, SCENE_NB_COL_MAX, iSrcRow, iSrcCol, iDstRow, iDstCol);
-
+        iNbCellsDestroyed += SceneTokenMove(chScene, SCENE_NB_ROW_MAX, SCENE_NB_COL_MAX, iSrcRow, iSrcCol, iDstRow, iDstCol);
+        iNbTours++;
+        
+        printf("nbToursEcoules : %d\r\nNbCellsDestroyed : %d\r\nnbRows * nbCols = %d\r\n", iNbTours, iNbCellsDestroyed, iSceneNbRow * iSceneNbCol);
     }
-    
-    return EXIT_SUCCESS;
 }
 
 /* −−−−−−−−−−−−−−−− IMPLEMENTATIONS DES FONCTIONS −−−−−−−−−−−−−−−−−−−−−−−−−−−−−− */
-void SceneInit(char pa_sceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol, char pa_fileNameStr[]) {
+int SceneInit(char pa_sceneArray[][SCENE_NB_COL_MAX], int *pa_pINbRow, int *pa_pINbCol, char pa_fileNameStr[]) {
     FILE *ptr_fSceneGrid;
     char c;
     int iCurrentRow, iCurrentCol;
     int iNbPassedChar;
+    int iNbChar, iNbVoid;
     
+    //Calcul du nombre de ligne et de colonnes.
+    iNbChar = iNbVoid = 0;
+    
+    ptr_fSceneGrid = fopen(pa_fileNameStr, "r");
+    if(ptr_fSceneGrid == NULL) {
+        perror("Erreur à l'ouverture du fichier\r\n");
+    }
+    else {
+        while((c = fgetc(ptr_fSceneGrid)) != EOF) {
+            if((c >= 'A' && c <= 'E') || (c == 'V')) {
+                if(c == 'V') {
+                    iNbVoid++;
+                }
+                iNbChar++;
+            }
+            else if(c == '\n') {
+                *pa_pINbRow += 1;
+            }
+        }
+        *pa_pINbCol = iNbChar / *pa_pINbRow;
+        fclose(ptr_fSceneGrid);
+    }
+        
+    //Copie du fichier dans iScene.
     iCurrentRow = iCurrentCol = 0;
     iNbPassedChar = 0;
     
@@ -99,13 +129,15 @@ void SceneInit(char pa_sceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCo
                     iNbPassedChar++;
                     iCurrentCol++;
                 }
-            } while(iCurrentCol < pa_nbCol);
+            } while(iCurrentCol < *pa_pINbCol);
             
             iCurrentCol = 0;
             iCurrentRow++;
-        } while(iNbPassedChar < (pa_nbRow * pa_nbCol));
+        } while(iNbPassedChar < (*pa_pINbRow * *pa_pINbCol));
         fclose(ptr_fSceneGrid);
     }
+    
+    return iNbVoid;
 }
 void SceneDisplay(char pa_sceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol) {
     
