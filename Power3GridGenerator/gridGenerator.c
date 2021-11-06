@@ -14,117 +14,15 @@
 #define GRID_NB_COLOURS_MIN         (3)
 #define GRID_NB_COLOURS_MAX         (6)
 
+int CheckArguments(int pa_argc, char *pa_argv[], int *pa_pINbRow, int *pa_pINbCol, int *pa_pINbColours);
+
 int main(int argc, char *argv[]) {
     
     int iGridNbRow, iGridNbCol, iGridNbColours;
-    
-#ifdef DEBUG
-    printf("main() arguments\r\n\targv[1] : %d\r\n\targv[2] = %d\r\n\targv[3] = %d\r\n", *argv[1], *argv[2], *argv[3]);
-    printf("nbRow : %d\tnbCol : %d\tnbColours : %d\r\n", iGridNbRow, iGridNbCol, iGridNbColours);
-#endif
 
-    // Aucun argument
-    if(argc == 1) {
-        iGridNbRow = GRID_DEFAULT_NB_ROW;
-        iGridNbCol = GRID_DEFAULT_NB_COL;
-        iGridNbColours = GRID_DEFAULT_NB_COLOURS;
-    }
+    CheckArguments(argc, argv, &iGridNbRow, &iGridNbCol, &iGridNbColours);
+    //printf("NbRow : %d\r\nNbCol : %d\r\nNbColours : %d\r\n\r\n", iGridNbRow, iGridNbCol, iGridNbColours);
     
-    else if(argc > 1) {
-        
-        char *ptr_cArgQualif;
-        
-        // Vérification : Nombre d'arguments
-        if(argc != 4) {
-            printf("An error occured : ");
-            
-            (argc < 4)
-                ? (ptr_cArgQualif = "few")
-                : (ptr_cArgQualif = "many");
-                
-            printf("Too %s arguments were passed to grid.\r\n", ptr_cArgQualif);
-            exit(EXIT_FAILURE);
-        }
-    
-        //Vérification : Validité des arguments
-        else {
-            
-            char *ptr_cErrorMessage;    // N'indique que la première erreur (À FIX)
-            int iWrongArg;
-            int iMinValue, iMaxValue;
-            
-            if(*argv[1] < GRID_NB_ROW_MIN) {
-                iWrongArg = 1;
-                ptr_cArgQualif = "low";
-                iMinValue = GRID_NB_ROW_MIN;
-                iMaxValue = GRID_NB_ROW_MAX;
-                
-                ptr_cErrorMessage = "%s too %s. Must be included between %d and %d.\r\n";
-                printf(ptr_cErrorMessage, argv[iWrongArg], ptr_cArgQualif, iMinValue, iMaxValue);
-                exit(EXIT_FAILURE);
-            }
-            else if(*argv[1] > GRID_NB_ROW_MAX) {
-                iWrongArg = 1;
-                ptr_cArgQualif = "high";
-                iMinValue = GRID_NB_ROW_MIN;
-                iMaxValue = GRID_NB_ROW_MAX;
-                
-                ptr_cErrorMessage = "%s too %s. Must be included between %d and %d.\r\n";
-                printf(ptr_cErrorMessage, argv[iWrongArg], ptr_cArgQualif, iMinValue, iMaxValue);
-                exit(EXIT_FAILURE);
-            }
-            else if(*argv[2] < GRID_NB_COL_MIN) {
-                iWrongArg = 2;
-                ptr_cArgQualif = "low";
-                iMinValue = GRID_NB_COL_MIN;
-                iMaxValue = GRID_NB_COL_MAX;
-                
-                ptr_cErrorMessage = "%s too %s. Must be included between %d and %d.\r\n";
-                printf(ptr_cErrorMessage, argv[iWrongArg], ptr_cArgQualif, iMinValue, iMaxValue);
-                exit(EXIT_FAILURE);
-            }
-            else if(*argv[2] > GRID_NB_COL_MAX) {
-                iWrongArg = 2;
-                ptr_cArgQualif = "high";
-                iMinValue = GRID_NB_COL_MIN;
-                iMaxValue = GRID_NB_COL_MAX;
-                
-                ptr_cErrorMessage = "%s too %s. Must be included between %d and %d.\r\n";
-                printf(ptr_cErrorMessage, argv[iWrongArg], ptr_cArgQualif, iMinValue, iMaxValue);
-                exit(EXIT_FAILURE);
-            }
-            else if(*argv[3] < GRID_NB_COLOURS_MIN) {
-                iWrongArg = 3;
-                ptr_cArgQualif = "low";
-                iMinValue = GRID_NB_COLOURS_MIN;
-                iMaxValue = GRID_NB_COLOURS_MAX;
-                
-                ptr_cErrorMessage = "%s too %s. Must be included between %d and %d.\r\n";
-                printf(ptr_cErrorMessage, argv[iWrongArg], ptr_cArgQualif, iMinValue, iMaxValue);
-                exit(EXIT_FAILURE);
-            }
-            else if(*argv[3] > GRID_NB_COLOURS_MAX) {
-                iWrongArg = 3;
-                ptr_cArgQualif = "high";
-                iMinValue = GRID_NB_COLOURS_MIN;
-                iMaxValue = GRID_NB_COLOURS_MAX;
-                
-                ptr_cErrorMessage = "%s too %s. Must be included between %d and %d.\r\n";
-                printf(ptr_cErrorMessage, argv[iWrongArg], ptr_cArgQualif, iMinValue, iMaxValue);
-                exit(EXIT_FAILURE);
-            }
-            
-            //Si toutes les valeurs sont conformes...
-            else {
-                iGridNbRow = *argv[1];
-                iGridNbCol = *argv[2];
-                iGridNbColours = *argv[3];
-            }
-        }
-    }
-    
-    //Définir nbColours en arg de main
-    //Définir nombre de col et row en arg de main
     
     //Générer nbVoidCells aléatoire entre MIN et MAX
     //init nbCellsLeftToGenerate = row * col - nbVoidCells;
@@ -139,4 +37,105 @@ int main(int argc, char *argv[]) {
     //Copier tableau dans fichier grille
     
     return EXIT_SUCCESS;
+}
+
+int CheckArguments(int pa_argc, char *pa_argv[], int *pa_pINbRow, int *pa_pINbCol, int *pa_pINbColours) {
+    
+    char *ptr_strArgQualif;
+    char *ptr_cErrorMessage;
+    char *ptr_strEnd;
+    int iWrongArg;
+    int iMinValue, iMaxValue;
+
+    // Aucun argument
+    if(pa_argc == 1) {
+        *pa_pINbRow = GRID_DEFAULT_NB_ROW;
+        *pa_pINbCol = GRID_DEFAULT_NB_COL;
+        *pa_pINbColours = GRID_DEFAULT_NB_COLOURS;
+    }
+    
+    else if(pa_argc > 1) {
+        
+        // Vérification : Nombre d'arguments
+        if(pa_argc != 4) {
+            printf("An error occured : ");
+            
+            (pa_argc < 4)
+                ? (ptr_strArgQualif = "few")
+                : (ptr_strArgQualif = "many");
+                
+            printf("Too %s arguments were passed to grid.\r\n", ptr_strArgQualif);
+            exit(EXIT_FAILURE);
+        }
+    
+        else {
+            
+            //Assignation des valeurs aux variables
+            *pa_pINbRow = strtol(pa_argv[1], &ptr_strEnd, 10);
+            *pa_pINbCol = strtol(pa_argv[2], &ptr_strEnd, 10);
+            *pa_pINbColours = strtol(pa_argv[3], &ptr_strEnd, 10);
+            
+            //Vérification : Validité des arguments
+            if(*pa_pINbRow< GRID_NB_ROW_MIN) {                                                                      // N'indique que la première erreur (À FIX)
+                iWrongArg = 1;
+                ptr_strArgQualif = "low";
+                iMinValue = GRID_NB_ROW_MIN;
+                iMaxValue = GRID_NB_ROW_MAX;
+                
+                ptr_cErrorMessage = "%s too %s. Must be included between %d and %d.\r\n";
+                printf(ptr_cErrorMessage, pa_argv[iWrongArg], ptr_strArgQualif, iMinValue, iMaxValue);
+                exit(EXIT_FAILURE);
+            }
+            else if(*pa_pINbRow > GRID_NB_ROW_MAX) {
+                iWrongArg = 1;
+                ptr_strArgQualif = "high";
+                iMinValue = GRID_NB_ROW_MIN;
+                iMaxValue = GRID_NB_ROW_MAX;
+                
+                ptr_cErrorMessage = "%s too %s. Must be included between %d and %d.\r\n";
+                printf(ptr_cErrorMessage, pa_argv[iWrongArg], ptr_strArgQualif, iMinValue, iMaxValue);
+                exit(EXIT_FAILURE);
+            }
+            else if(*pa_pINbCol < GRID_NB_COL_MIN) {
+                iWrongArg = 2;
+                ptr_strArgQualif = "low";
+                iMinValue = GRID_NB_COL_MIN;
+                iMaxValue = GRID_NB_COL_MAX;
+                
+                ptr_cErrorMessage = "%s too %s. Must be included between %d and %d.\r\n";
+                printf(ptr_cErrorMessage, pa_argv[iWrongArg], ptr_strArgQualif, iMinValue, iMaxValue);
+                exit(EXIT_FAILURE);
+            }
+            else if(*pa_pINbCol > GRID_NB_COL_MAX) {
+                iWrongArg = 2;
+                ptr_strArgQualif = "high";
+                iMinValue = GRID_NB_COL_MIN;
+                iMaxValue = GRID_NB_COL_MAX;
+                
+                ptr_cErrorMessage = "%s too %s. Must be included between %d and %d.\r\n";
+                printf(ptr_cErrorMessage, pa_argv[iWrongArg], ptr_strArgQualif, iMinValue, iMaxValue);
+                exit(EXIT_FAILURE);
+            }
+            else if(*pa_pINbColours < GRID_NB_COLOURS_MIN) {
+                iWrongArg = 3;
+                ptr_strArgQualif = "low";
+                iMinValue = GRID_NB_COLOURS_MIN;
+                iMaxValue = GRID_NB_COLOURS_MAX;
+                
+                ptr_cErrorMessage = "%s too %s. Must be included between %d and %d.\r\n";
+                printf(ptr_cErrorMessage, pa_argv[iWrongArg], ptr_strArgQualif, iMinValue, iMaxValue);
+                exit(EXIT_FAILURE);
+            }
+            else if(*pa_pINbColours > GRID_NB_COLOURS_MAX) {
+                iWrongArg = 3;
+                ptr_strArgQualif = "high";
+                iMinValue = GRID_NB_COLOURS_MIN;
+                iMaxValue = GRID_NB_COLOURS_MAX;
+                
+                ptr_cErrorMessage = "%s too %s. Must be included between %d and %d.\r\n";
+                printf(ptr_cErrorMessage, pa_argv[iWrongArg], ptr_strArgQualif, iMinValue, iMaxValue);
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
 }
