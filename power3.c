@@ -41,44 +41,49 @@ int main(int argc, char *argv[]) {
         cFileName = argv[1];
     }
     else {
-        cFileName = "grid1.txt";
+        cFileName = "default.txt";
     }
     
     //Initialisation de la grille
     iSceneNbRow = iSceneNbCol = 0;
     iNbVoidCells = SceneInit(chScene, &iSceneNbRow, &iSceneNbCol, cFileName);
     
+    //Scene initiale
+    SceneDisplay(chScene, iSceneNbRow, iSceneNbCol);
+    
+    printf("Enter movement 'srcRow srcCol dstRow dstCol'.\r\n\r\n");
+    printf("\tsrcRow and dstRow must be included between 0 and %d.\r\n\tsrcCol and dstCol must be included between 0 and %d.\r\n\r\n", iSceneNbRow - 1, iSceneNbCol - 1);
+    
     //Boucle de jeu
     iNbCellsDestroyed = 0;
     iNbTours = 0;
-    while(iNbCellsDestroyed <= (iSceneNbRow * iSceneNbCol - iNbVoidCells)) {
-
-        //Scene initiale / Affichage formate de la scene de jeu
-        SceneDisplay(chScene, iSceneNbRow, iSceneNbCol);
-        
-        //Si condition de victoire validée au round précédent. Affichage de la scène vide + message de victoire.
-        if(iNbCellsDestroyed == (iSceneNbRow * iSceneNbCol - iNbVoidCells)) {
-            printf("FÉLICITATIONS !!! VOUS AVEZ GAGNÉ !\r\n");
-            printf("Grille résolue en %d tours.\r\n", iNbTours);
-            return EXIT_SUCCESS;
-        }
+    
+    do {
 
         //Traitement des entrees clavier
         do {
-            printf("Enter movement 'srcRow srcCol dstRow dstCol'.\r\n");
-            printf("srcRow and dstRow must be included between 0 and %d.\r\nsrcCol and dstCol must be included between 0 and %d.\r\n --> ", SCENE_NB_ROW_MAX - 1, SCENE_NB_COL_MAX - 1);
             GetMove(&iSrcRow, &iSrcCol, &iDstRow, &iDstCol);
         } while(iSrcRow < 0 || iSrcRow > SCENE_NB_ROW_MAX - 1 ||
                 iSrcCol < 0 || iSrcCol > SCENE_NB_COL_MAX - 1 ||
                 iDstRow < 0 || iDstRow > SCENE_NB_ROW_MAX - 1 ||
                 iDstCol < 0 || iDstCol > SCENE_NB_COL_MAX - 1);
+        printf("\r\n");
 
         //Algorithme de mouvement des jetons (-> Moteur du jeu)    
         iNbCellsDestroyed += SceneTokenMove(chScene, SCENE_NB_ROW_MAX, SCENE_NB_COL_MAX, iSrcRow, iSrcCol, iDstRow, iDstCol);
         iNbTours++;
         
-        printf("nbToursEcoules : %d\r\nNbCellsDestroyed : %d\r\nnbRows * nbCols = %d\r\n", iNbTours, iNbCellsDestroyed, iSceneNbRow * iSceneNbCol);
-    }
+        //Affichage formate de la scene de jeu
+        SceneDisplay(chScene, iSceneNbRow, iSceneNbCol);
+        
+        //Si condition de victoire validée, affichage de la scène vide + message de victoire.
+        if(iNbCellsDestroyed == (iSceneNbRow * iSceneNbCol - iNbVoidCells)) {
+            printf("\t\tFÉLICITATIONS !!! VOUS AVEZ GAGNÉ !\r\n");
+            printf("\t\tGrille résolue en %d tour(s).\r\n", iNbTours);
+            return EXIT_SUCCESS;
+        }
+        
+    } while(iNbCellsDestroyed <= (iSceneNbRow * iSceneNbCol - iNbVoidCells));
 }
 
 /* −−−−−−−−−−−−−−−− IMPLEMENTATIONS DES FONCTIONS −−−−−−−−−−−−−−−−−−−−−−−−−−−−−− */
@@ -160,6 +165,14 @@ void SceneDisplay(char pa_sceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_n
 
     BorderDisplay(pa_nbCol);
     ColumnDisplay(pa_nbCol);
+    
+    printf("\r\n");
+    
+    //Séparateur entre les tours.
+    for(int i = 0; i < 80; i++) {
+        printf("-");
+    }
+    printf("\r\n");
 
 }
 void BorderDisplay(int pa_nbCol) {
@@ -190,21 +203,27 @@ void GetMove(int *pa_pISrcRow, int *pa_pISrcCol, int *pa_pIDstRow, int *pa_pIDst
     
     *pa_pISrcRow = *pa_pISrcCol = *pa_pIDstRow = *pa_pIDstCol = 0;
     
-    printf("Enter movement src -> dst : ");
+    printf("Enter movement or press Q to quit : ");
     fgets(buffer, INPUT_BUFFER_LEN, stdin);
     
     pToken = strtok(buffer, separators);
-    if(pToken) {
-        *pa_pISrcRow = atoi(pToken);
-        pToken = strtok(NULL, separators);
+    if(pToken[0] == 'Q' || pToken[0] == 'q') {                                       // Si l'utilisateur appuie sur Q pour quitter...
+        exit(EXIT_SUCCESS);                                                         // Sortir du programme.
+    }
+    
+    else {
         if(pToken) {
-            *pa_pISrcCol = atoi(pToken);
+            *pa_pISrcRow = atoi(pToken);
             pToken = strtok(NULL, separators);
             if(pToken) {
-                *pa_pIDstRow = atoi(pToken);
+                *pa_pISrcCol = atoi(pToken);
                 pToken = strtok(NULL, separators);
                 if(pToken) {
-                    *pa_pIDstCol = atoi(pToken);
+                    *pa_pIDstRow = atoi(pToken);
+                    pToken = strtok(NULL, separators);
+                    if(pToken) {
+                        *pa_pIDstCol = atoi(pToken);
+                    }
                 }
             }
         }
@@ -234,7 +253,7 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
     // Vérification : Cellule de départ vide OU cellule d'arrivée non vide
     if( pa_SceneArray[pa_srcRow][pa_srcCol] == SCENE_CELL_VOID_VALUE || 
         pa_SceneArray[pa_dstRow][pa_dstCol] != SCENE_CELL_VOID_VALUE) {
-        printf("Error : src with '-' value or dst not empty.\r\n");
+        printf("\tERROR : src with '-' value or dst not empty.\r\n\r\n");
         return 0;
     }
     
@@ -253,12 +272,14 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
         iRowToCheck += iYIncrement;
         iColToCheck += iXIncrement;
         if(pa_SceneArray[iRowToCheck][iColToCheck] != SCENE_CELL_VOID_VALUE) {
-            printf("There is a non void cell in the path...\r\n");
+            printf("\tERROR : There is a non void cell in the path...\r\n\r\n");
         return 0;
         }
     }
     
-    // Déplacement du jeton...
+    //Vérification : Obtention d'une chaine d'au moins 3 jetons
+    
+    // Déplacement virtuel du jeton pour vérification
     pa_SceneArray[pa_dstRow][pa_dstCol] = pa_SceneArray[pa_srcRow][pa_srcCol];
     pa_SceneArray[pa_srcRow][pa_srcCol] = SCENE_CELL_VOID_VALUE;
     
@@ -315,7 +336,7 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
         return 1 + (iLongestCounter / 2);
     }
     else {
-        printf("This move doesn't create a chain whose length is superior or equal to 3.\r\n");
+        printf("ERROR : This move doesn't create a chain whose length is superior or equal to 3.\r\n");
 
         pa_SceneArray[pa_srcRow][pa_srcCol] = pa_SceneArray[pa_dstRow][pa_dstCol];                          // Sinon, remise en place du jeton...
         pa_SceneArray[pa_dstRow][pa_dstCol] = SCENE_CELL_VOID_VALUE;
