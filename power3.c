@@ -275,8 +275,14 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
     
     //Recherche de la plus longue chaine...
     
-    //Initialisation des longueurs des chaînes à 0...
+    //Initialisation des longueurs des chaînes à 0, et remplissages des tableaux à la valeur 0...
     iBufferCounter = iLongestCounter = 0;
+    
+    for(int i = 0; i < 7; i++) {
+        for(int j = 0; j < 2; j++) {
+            iLongestChain[i][j] = iBufferChain[i][j] = 0;
+        }
+    }
     
     for(int i = 0; i < 4; i++) {
 
