@@ -20,7 +20,6 @@ void SceneDisplay(char pa_sceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_n
 void BorderDisplay(int pa_nbCol);
 void ColumnDisplay(int pa_nbCol);
 void GetMove(int *pa_pISrcRow, int *pa_pISrcCol, int *pa_pIDstRow, int *pa_pIDstCol);
-void ConvertDeltaToPositiveInt(int *pa_pIDelta);
 int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol, int pa_srcRow, int pa_srcCol, int pa_dstRow, int pa_dstCol);
 int SceneInit(char pa_sceneArray[][SCENE_NB_COL_MAX], int *pa_pINbRow, int *pa_pINbCol, char pa_fileNameStr[]);
 int SetIncrement(int *pa_pISrc, int *pa_pIDst);
@@ -199,7 +198,6 @@ void GetMove(int *pa_pISrcRow, int *pa_pISrcCol, int *pa_pIDstRow, int *pa_pIDst
     char *pToken;
     char buffer[INPUT_BUFFER_LEN];
     const char separators[] = "\r\n ";
-    int counter = 0;
     
     *pa_pISrcRow = *pa_pISrcCol = *pa_pIDstRow = *pa_pIDstCol = 0;
     
@@ -229,20 +227,12 @@ void GetMove(int *pa_pISrcRow, int *pa_pISrcCol, int *pa_pIDstRow, int *pa_pIDst
         }
     }
 }
-void ConvertDeltaToPositiveInt(int *pa_pIDelta) {
-    
-    if(*pa_pIDelta < 0) {
-        *pa_pIDelta = -*pa_pIDelta;
-    }
-}
 int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_nbCol, int pa_srcRow, int pa_srcCol, int pa_dstRow, int pa_dstCol) {
     
     int iXIncrement, iYIncrement;
     int iRowToCheck, iColToCheck;
-    int iLongestChain[14];
-    int iBufferChain[14];
-    int iBufferCounter = 0;
-    int iLongestCounter = 0;
+    int iBufferCounter, iLongestCounter;
+    int iBufferChain[7][2], iLongestChain[7][2];
     int iCombinaisonsIncrements[4][2] = {
         {-1, -1},
         {+1, -1},
@@ -284,11 +274,15 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
     pa_SceneArray[pa_srcRow][pa_srcCol] = SCENE_CELL_VOID_VALUE;
     
     //Recherche de la plus longue chaine...
+    
+    //Initialisation des longueurs des chaînes à 0...
+    iBufferCounter = iLongestCounter = 0;
+    
     for(int i = 0; i < 4; i++) {
 
         //(Ré)initialisation des variables...
         for (int i = 0; i < iBufferCounter; i++) {
-            iBufferChain[i] = 0;
+            iBufferChain[i][0] = iBufferChain[i][1] = 0;
         }
         iBufferCounter = 0;
         
@@ -302,9 +296,9 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
                     pa_SceneArray[pa_dstRow + iYIncrement][pa_dstCol + iXIncrement] == pa_SceneArray[pa_dstRow][pa_dstCol]) {           //...et tant qu’elle est de la même "couleur"...
                 
                 //Ajouter les coordonnées de la case à la chaine buffer.
-                iBufferChain[iBufferCounter] = pa_dstRow + iYIncrement;
-                iBufferChain[iBufferCounter + 1] = pa_dstCol + iXIncrement;
-                iBufferCounter += 2;
+                iBufferChain[iBufferCounter][0] = pa_dstRow + iYIncrement;
+                iBufferChain[iBufferCounter][1] = pa_dstCol + iXIncrement;
+                iBufferCounter++;
 
                 //Incrémenter X et Y pour rechercher plus loin dans l’axe.
                 iXIncrement += iCombinaisonsIncrements[i][0];
@@ -320,20 +314,21 @@ int SceneTokenMove(char pa_SceneArray[][SCENE_NB_COL_MAX], int pa_nbRow, int pa_
         //Si c’est la chaine la plus longue à ce jour, la conserver.
         if(iBufferCounter >= iLongestCounter) {
             for(int i = 0; i < iBufferCounter; i++) {
-                iLongestChain[i] = iBufferChain[i];
+                iLongestChain[i][0] = iBufferChain[i][0];
+                iLongestChain[i][1] = iBufferChain[i][1];
                 iLongestCounter = iBufferCounter;
             }
         }
     }
     
     //Destruction des cellules appartenant à la plus longue chaine...
-    if(((iLongestCounter / 2) + 1) >= 3) {                                                                  //Si la chaine comporte au moins 3 jetons...
-        for(int i = 0; i < iLongestCounter; i += 2) {
-            pa_SceneArray[iLongestChain[i]][iLongestChain[i + 1]] = SCENE_CELL_VOID_VALUE;
+    if((iLongestCounter + 1) >= 3) {                                                                        //Si la chaine comporte au moins 3 jetons...
+        for(int i = 0; i < iLongestCounter; i++) {
+            pa_SceneArray[iLongestChain[i][0]][iLongestChain[i][1]] = SCENE_CELL_VOID_VALUE;
         }
         pa_SceneArray[pa_dstRow][pa_dstCol] = SCENE_CELL_VOID_VALUE;
 
-        return 1 + (iLongestCounter / 2);
+        return (iLongestCounter + 1);
     }
     else {
         printf("ERROR : This move doesn't create a chain whose length is superior or equal to 3.\r\n");
@@ -360,10 +355,8 @@ int SetDirection(int pa_srcRow, int pa_srcCol, int pa_dstRow, int pa_dstCol) {
     
     int iDeltaX, iDeltaY;
 
-    iDeltaX = pa_dstCol - pa_srcCol;
-    iDeltaY = pa_dstRow - pa_srcRow;
-    ConvertDeltaToPositiveInt(&iDeltaX);
-    ConvertDeltaToPositiveInt(&iDeltaY);
+    iDeltaX = abs(pa_dstCol - pa_srcCol);
+    iDeltaY = abs(pa_dstRow - pa_srcRow);
 
     if(iDeltaX && !(iDeltaY)) {
         return VERTICAL;
